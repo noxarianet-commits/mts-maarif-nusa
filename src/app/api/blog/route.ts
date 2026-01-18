@@ -91,9 +91,38 @@ export async function POST(request: NextRequest) {
             body.publishedAt = new Date();
         }
 
-        // Set creator
+        // Set creator and author
         body.createdBy = auth.userId;
         body.updatedBy = auth.userId;
+
+        // Fetch user for author details
+        const { User } = await import('@/lib/database/models');
+        const user = await User.findById(auth.userId);
+        if (user) {
+            body.author = {
+                name: user.name,
+                avatar: user.avatar || '',
+            };
+        } else {
+            body.author = {
+                name: 'Admin',
+            };
+        }
+
+        // Structure coverImage if string
+        if (typeof body.image === 'string') {
+            body.coverImage = {
+                url: body.image,
+                cloudinaryId: 'unknown', // Ideally should be passed from frontend
+                alt: body.title,
+            };
+            delete body.image;
+        }
+
+        // Lowercase category
+        if (body.category) {
+            body.category = body.category.toLowerCase();
+        }
 
         const blog = await Blog.create(body);
 
@@ -105,7 +134,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error('Create blog error:', error);
         return NextResponse.json(
-            { success: false, message: 'Terjadi kesalahan server' },
+            { success: false, message: error instanceof Error ? error.message : 'Terjadi kesalahan server' },
             { status: 500 }
         );
     }

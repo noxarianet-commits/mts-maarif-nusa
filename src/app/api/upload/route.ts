@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error('Upload error:', error);
         return NextResponse.json(
-            { success: false, message: 'Terjadi kesalahan saat upload' },
+            { success: false, message: error instanceof Error ? error.message : 'Terjadi kesalahan saat upload' },
             { status: 500 }
         );
     }
